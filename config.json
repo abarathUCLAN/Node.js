@@ -1,0 +1,23 @@
+{
+    "port": 8000,
+    "security": {
+        "tokenLife" : 3600
+    },
+    "mongoose": {
+        "uri": "mongodb://test:test@ds049925.mongolab.com:49925/pdmsys"
+    },
+    "default": {
+        "api": {
+            "version" : "v1"
+        },		
+        "user": {
+            "username": "myapi",
+            "password": "abc1234"
+        },
+        "client": {
+            "name": "Pdmsys",
+            "clientId": "f3d259ddd3ed8ff3843839b",
+            "clientSecret": "4c7f6f8fa93d59c45502c0ae8c4a95b"
+        }
+    }
+}
