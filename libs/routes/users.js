@@ -9,9 +9,19 @@ var db = require(libs + 'db/mongoose');
 var User = require(libs + 'model/user');
 var Token = require(libs + 'model/accessToken');
 var RefreshToken = require(libs + 'model/refreshToken');
-var iz = require('node_modules/iz/amd/iz'),
-  are = require('node_modules/iz/amd/are'),
-  validators = require('node_modules/iz/amd/validators');
+var iz = require('iz'),
+  are = iz.are,
+  validators = iz.validators;
+var winston = require('winston');
+var path = require('path');
+var filename = path.join(process.cwd(), '/logs/created-logfile.log');
+var logger = new(winston.Logger)({
+  transports: [
+    new(winston.transports.File)({
+      filename: filename
+    })
+  ]
+});
 
 router.get('/changeData', passport.authenticate('bearer', {
     session: false
@@ -53,42 +63,77 @@ router.post('/changeData', passport.authenticate('bearer', {
     session: false
   }),
   function(req, res) {
+    var rules = are({
+      firstname: iz(user.firstname).required(),
+      firstname: iz(user.firstname).minLength(2),
+      firstname: iz(user.firstname).maxLength(25),
+      password: iz(user.password).required(),
+      password: iz(user.password).minLength(5),
+      lastname: iz(user.lastname).required(),
+      lastname: iz(user.lastname).minLength(2),
+      lastname: iz(user.lastname).maxLength(25)
+    });
     User.findById(req.user.userId,
       function(err, doc) {
         if (err) throw err;
-        doc.firstname = req.body.firstname;
-        doc.lastname = req.body.lastname;
-        doc.password = req.body.password;
-        doc.save(function(error, result) {
-          if (error) throw error;
-          else {
-            res.statusCode = 200;
-            res.end();
-          }
-        });
+        var changeData = {
+          firstname: req.body.firstname,
+          lastname: req.body.lastname,
+          password: req.body.password
+        };
+        if (rules.validFor(user)) {
+          doc.firstname = changeData.firstname;
+          doc.lastname = changeData.lastname;
+          doc.password = changeData.password;
+          doc.save(function(error, result) {
+            if (error) throw error;
+            else {
+              res.statusCode = 200;
+              res.end();
+            }
+          });
+        } else {
+          res.statusCode = 400;
+          res.json("Validation failed.");
+        }
       });
   });
 
 
 router.post('/register', function(req, res) {
-
   var user = new User({
     username: req.body.email,
     password: req.body.password,
     firstname: req.body.firstname,
     lastname: req.body.lastname
   });
-
-  user.save(function(err, user) {
-    if (!err) {
-      res.statusCode = 200;
-      res.json(user);
-    } else {
-      res.statusCode = 400;
-      res.json(err);
-    }
+  var rules = are({
+    firstname: iz(user.firstname).required(),
+    firstname: iz(user.firstname).minLength(2),
+    firstname: iz(user.firstname).maxLength(25),
+    password: iz(user.password).required(),
+    password: iz(user.password).minLength(5),
+    username: iz(user.username).required().email(),
+    lastname: iz(user.lastname).required(),
+    lastname: iz(user.lastname).minLength(2),
+    lastname: iz(user.lastname).maxLength(25)
   });
-
+  if (rules.validFor(user)) {
+    user.save(function(err, user) {
+      if (!err) {
+        res.statusCode = 200;
+        res.json(user);
+      } else {
+        logger.log('info', 'Username ' + req.body.email + ' already taken.');
+        res.statusCode = 400;
+        res.json(err);
+      }
+    });
+  } else {
+    res.statusCode = 400;
+    logger.log('info', 'Registration failed with username: ' + req.body.email);
+    res.json("Validation failed.");
+  }
 });
 
 router.post('/getUserByEmail', function(req, res) {
@@ -110,7 +155,7 @@ router.post('/getUserByEmail', function(req, res) {
   });
 });
 
-router.get('/rights/:id(\\d+)', passport.authenticate('bearer', {
+router.get('/rights/:id(\\d+)' ,passport.authenticate('bearer', {
     session: false
   }),
   function(req, res) {
@@ -118,7 +163,6 @@ router.get('/rights/:id(\\d+)', passport.authenticate('bearer', {
       username: req.body.email
     }, 'firstname lastname username', function(error, result) {
       if (error) throw new err;
-      console.log(result);
       if (result === undefined) {
         res.statusCode = 400;
         res.end();

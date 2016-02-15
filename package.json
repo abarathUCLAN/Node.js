@@ -27,7 +27,8 @@
     "passport-oauth2-client-password": "^0.1.x",
     "request": "^2.69.0",
     "should": "^8.2.2",
-    "winston": "^0.8.x"
+    "supertest": "^1.2.0",
+    "winston": "^0.8.3"
   },
   "jshintConfig": {
     "curly": true,
