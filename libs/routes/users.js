@@ -12,6 +12,7 @@ var RefreshToken = require(libs + 'model/refreshToken');
 var iz = require('iz'),
   are = iz.are,
   validators = iz.validators;
+
 var winston = require('winston');
 var path = require('path');
 var filename = path.join(process.cwd(), '/logs/created-logfile.log');
@@ -64,14 +65,14 @@ router.post('/changeData', passport.authenticate('bearer', {
   }),
   function(req, res) {
     var rules = are({
-      firstname: iz(user.firstname).required(),
-      firstname: iz(user.firstname).minLength(2),
-      firstname: iz(user.firstname).maxLength(25),
-      password: iz(user.password).required(),
-      password: iz(user.password).minLength(5),
-      lastname: iz(user.lastname).required(),
-      lastname: iz(user.lastname).minLength(2),
-      lastname: iz(user.lastname).maxLength(25)
+      firstname: iz(req.body.firstname).required(),
+      firstname: iz(req.body.firstname).minLength(2),
+      firstname: iz(req.body.firstnamee).maxLength(25),
+      password: iz(req.body.password).required(),
+      password: iz(req.body.password).minLength(5),
+      lastname: iz(req.body.lastname).required(),
+      lastname: iz(req.body.lastname).minLength(2),
+      lastname: iz(req.body.lastname).maxLength(25)
     });
     User.findById(req.user.userId,
       function(err, doc) {
@@ -81,7 +82,7 @@ router.post('/changeData', passport.authenticate('bearer', {
           lastname: req.body.lastname,
           password: req.body.password
         };
-        if (rules.validFor(user)) {
+        if (rules.validFor(changeData)) {
           doc.firstname = changeData.firstname;
           doc.lastname = changeData.lastname;
           doc.password = changeData.password;
